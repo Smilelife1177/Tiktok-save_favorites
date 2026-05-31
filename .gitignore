@@ -100,8 +100,8 @@ venv.bak/
 .mypy_cache/
 
 # Output files
-*.txt
 *.log
 downloads/
+browser_profile/
 
 GEMINI.md
