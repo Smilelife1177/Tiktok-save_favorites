@@ -3,76 +3,76 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Професійний інструмент для автоматизованого завантаження ваших збережених відео ("Favorites") з TikTok. Більше ніяких ручних маніпуляцій з токенами — все працює через автоматизацію браузера.
+A professional tool for automated downloading of your bookmarked videos ("Favorites") from TikTok. No more manual token manipulation — everything works via browser automation.
 
 ---
 
-## ✨ Особливості
+## ✨ Features
 
-- **🚀 Розумна авторизація:** Використовує Playwright для збереження вашої сесії. Увійдіть один раз — і забудете про це.
-- **🔍 Автоматичне сканування:** Скрипт сам знаходить вкладку "Збережене", гортає її та збирає посилання.
-- **🎬 Висока якість:** Завантаження через `yt-dlp` у найкращій доступній якості.
-- **📂 Організація:** Відео автоматично розкладаються по папках відповідно до імен авторів.
-- **🛡️ Безпека:** Ваші дані (кукі та сесії) зберігаються локально і ніколи не передаються стороннім особам.
+- **🚀 Smart Authorization:** Uses Playwright to save your session. Log in once and forget about it.
+- **🔍 Automated Scanning:** The script automatically finds the "Favorites" tab, scrolls through it, and collects links.
+- **🎬 High Quality:** Downloads via `yt-dlp` in the best available quality.
+- **📂 Organization:** Videos are automatically organized into folders based on the creators' usernames.
+- **🛡️ Security:** Your data (cookies and sessions) are stored locally and never shared with third parties.
 
 ---
 
-## 🛠️ Встановлення та налаштування
+## 🛠️ Installation and Setup
 
-### 1. Підготовка
-Переконайтеся, що у вас встановлено **Python 3.8+**.
+### 1. Preparation
+Ensure you have **Python 3.8+** installed.
 
-### 2. Автоматичне налаштування
-Ми підготували скрипт для Windows, який зробить все за вас:
+### 2. Automated Setup
+We have prepared a script for Windows that handles everything for you:
 ```powershell
 .\setup_venv.ps1
 ```
-*Це створить віртуальне середовище, встановить залежності та необхідні компоненти Playwright.*
+*This will create a virtual environment, install dependencies, and required Playwright components.*
 
-### 3. Активація середовища
+### 3. Activate Environment
 ```powershell
 .\venv\Scripts\activate
 ```
 
 ---
 
-## 🚀 Використання
+## 🚀 Usage
 
-Запустіть додаток командою:
+Run the application with the following command:
 ```powershell
-python main.py ваш_нікнейм --count 50
+python main.py your_nickname --count 50
 ```
 
-### Алгоритм роботи:
-1. **Перший запуск:** Відкриється вікно браузера. Якщо ви не авторизовані — увійдіть у свій акаунт TikTok.
-2. **Збір даних:** Скрипт перейде на сторінку "Favorites" і почне збирати посилання. Якщо автоматика не спрацює — просто натисніть на вкладку "Favorites" вручну та прокрутіть сторінку.
-3. **Завантаження:** Після збору потрібної кількості посилань браузер закриється, і розпочнеться завантаження відео в папку `downloads/`.
+### Workflow:
+1. **First Run:** A browser window will open. If you are not authorized — log into your TikTok account.
+2. **Data Collection:** The script will navigate to the "Favorites" page and start collecting links. If the automation doesn't trigger — simply click the "Favorites" tab manually and scroll down.
+3. **Downloading:** After collecting the requested number of links, the browser will close, and video downloading will begin in the `downloads/` folder.
 
 ---
 
-## 📂 Структура проекту
+## 📂 Project Structure
 
 ```text
-├── src/                # Сирцевий код
-│   ├── scraper.py      # Логіка Playwright (збір посилань)
-│   ├── downloader.py   # Логіка завантаження (yt-dlp)
-│   └── main.py         # Основний CLI інтерфейс
-├── main.py             # Точка входу
-├── setup_venv.ps1      # Скрипт швидкого налаштування
-└── requirements.txt    # Залежності
+├── src/                # Source code
+│   ├── scraper.py      # Playwright logic (link collection)
+│   ├── downloader.py   # Download logic (yt-dlp)
+│   └── main.py         # Main CLI interface
+├── main.py             # Entry point
+├── setup_venv.ps1      # Quick setup script
+└── requirements.txt    # Dependencies
 ```
 
 ---
 
-## ⚠️ Відмова від відповідальності
+## ⚠️ Disclaimer
 
-Цей проект створений виключно для особистого використання та ознайомлення. Автор не несе відповідальності за будь-яке порушення умов використання TikTok. Використовуйте інструмент відповідально.
-
----
-
-## 📄 Ліцензія
-
-Цей проект поширюється під ліцензією MIT. Детальніше див. у файлі [LICENSE](LICENSE).
+This project is created solely for personal use and educational purposes. The author is not responsible for any violation of TikTok's terms of service. Use this tool responsibly.
 
 ---
-*Створено за допомогою Gemini CLI*
+
+## 📄 License
+
+This project is distributed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+---
+*Created with Gemini CLI*
