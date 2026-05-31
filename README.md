@@ -73,6 +73,3 @@ This project is created solely for personal use and educational purposes. The au
 ## 📄 License
 
 This project is distributed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
----
-*Created with Gemini CLI*
