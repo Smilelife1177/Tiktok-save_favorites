@@ -5,7 +5,7 @@ from playwright.async_api import async_playwright
 class TikTokScraper:
     def __init__(self, nickname):
         self.nickname = nickname
-        self.base_url = f"https://www.tiktok.com/@{nickname}/video/favorites"
+        self.base_url = f"https://www.tiktok.com/@{nickname}"
         self.user_data_dir = os.path.join(os.getcwd(), "browser_profile")
 
     async def get_favorite_urls(self, count=100):
@@ -30,97 +30,92 @@ class TikTokScraper:
 
             # 1. Ensure we are on the Favorites tab
             try:
-                # Wait for the tab to be available
-                fav_tab_selector = 'div[data-e2e="favorites-tab"]'
-                await page.wait_for_selector(fav_tab_selector, timeout=30000)
+                # Try multiple ways to find the favorites tab
+                fav_tab = None
                 
-                # Check if it's already selected (usually has a specific class or underline)
-                # If not, click it
-                print("[*] Clicking Favorites tab to be sure...")
-                await page.click(fav_tab_selector)
-                await asyncio.sleep(2)
+                # Method A: data-e2e
+                fav_tab = await page.query_selector('div[data-e2e="favorites-tab"]')
+                
+                # Method B: Text search (English)
+                if not fav_tab:
+                    fav_tab = await page.get_by_text("Favorites", exact=True).first
+                    if await fav_tab.count() == 0: fav_tab = None
+                
+                # Method C: Text search (Ukrainian)
+                if not fav_tab:
+                    fav_tab = await page.get_by_text("Збережене", exact=True).first
+                    if await fav_tab.count() == 0: fav_tab = None
+
+                if fav_tab:
+                    print("[*] Found Favorites tab. Clicking...")
+                    try:
+                        # If it's a Locator (Method B/C), we need to handle differently
+                        if hasattr(fav_tab, "click"):
+                            await fav_tab.click()
+                        else:
+                            await page.click('div[data-e2e="favorites-tab"]')
+                    except:
+                        pass
+                    await asyncio.sleep(3)
+                else:
+                    print("[!] Could not auto-detect Favorites tab. PLEASE CLICK IT MANUALLY in the browser window.")
             except Exception as e:
-                print(f"[*] Could not find/click Favorites tab explicitly: {e}. Hope we are already there.")
+                print(f"[*] Note: Auto-navigation to tab failed. Please ensure you are on the Favorites page.")
 
             # Increased timeout and more robust waiting logic
             urls = set()
-            timeout_limit = 120 # 2 minutes
+            timeout_limit = 180 # 3 minutes
             start_time = asyncio.get_event_loop().time()
             
+            print("[*] Waiting for you to be on the Favorites page and for videos to load...")
+            
             while len(urls) < count:
-                current_url = page.url
-                if "login" in current_url:
-                    print("[!] Current page: Login. Waiting for you to finish login...")
-                else:
-                    # Look for the grid specifically under the favorites section
-                    # Sometimes the container ID or class changes when a tab is clicked
-                    print("[*] Searching for videos in Favorites grid...")
-
-                # 2. Focus strictly on the active video grid
-                # The favorites videos are usually in a div with data-e2e="user-post-item-list"
-                # but we want to make sure it's the one under the favorites section.
-                # We'll use a more specific selector if possible.
-                video_elements = await page.query_selector_all('div[data-e2e="user-post-item-list"] a[href*="/video/"]')
+                # Provide feedback every 15 seconds if nothing found
+                elapsed = asyncio.get_event_loop().time() - start_time
+                
+                # 2. Focus strictly on the confirmed favorites selector
+                print("[*] Searching for videos with data-e2e='favorites-item'...")
+                
+                # Primary search for the confirmed favorites items
+                video_elements = await page.query_selector_all('div[data-e2e="favorites-item"] a[href*="/video/"]')
                 
                 if not video_elements:
-                    # Fallback to general item but filtered
-                    all_items = await page.query_selector_all('div[data-e2e="user-post-item"]')
-                    video_elements = []
-                    for item in all_items:
-                        # Check if this item is in a "recommend" or "related" section
-                        is_bad = await item.evaluate('''(el) => {
-                            let p = el.parentElement;
-                            while(p) {
-                                if(p.innerText.includes("You may like") || p.innerText.includes("Recommended")) return true;
-                                p = p.parentElement;
-                            }
-                            return false;
-                        }''')
-                        if not is_bad:
-                            link = await item.query_selector('a[href*="/video/"]')
-                            if link:
-                                video_elements.append(link)
+                    # Fallback to general favorites container if the items are nested differently
+                    video_elements = await page.query_selector_all('div[data-e2e="favorites-list"] a[href*="/video/"]')
 
                 if video_elements:
                     for el in video_elements:
-                        href = await el.get_attribute("href")
-                        if href and "/video/" in href:
-                            # Prepend domain if it's a relative path
-                            full_url = href
-                            if href.startswith("/"):
-                                full_url = f"https://www.tiktok.com{href}"
-                            
-                            clean_url = full_url.split('?')[0]
-                            if clean_url not in urls:
-                                urls.add(clean_url)
-                                print(f"[+] Found: {clean_url}")
-                                
-                                # Optimization: check count inside inner loop
-                                if len(urls) >= count:
-                                    break
+                        try:
+                            href = await el.get_attribute("href")
+                            if href and "/video/" in href:
+                                full_url = f"https://www.tiktok.com{href}" if href.startswith("/") else href
+                                clean_url = full_url.split('?')[0]
+                                if clean_url not in urls:
+                                    urls.add(clean_url)
+                                    print(f"[+] Found ({len(urls)}/{count}): {clean_url}")
+                                    if len(urls) >= count: break
+                        except:
+                            continue
                 
                 if len(urls) >= count:
                     break
                 
-                # Check for timeout if no videos found at all
-                if not urls and (asyncio.get_event_loop().time() - start_time) > timeout_limit:
-                    print("[-] Timeout: No favorites found after 2 minutes.")
+                if not urls:
+                    if int(elapsed) % 15 == 0:
+                        print(f"[?] Still looking... Current URL: {page.url}")
+                        print("[?] Make sure you are on the 'All favorites' tab. Try scrolling down.")
+                    await asyncio.sleep(2)
+                else:
+                    # Scroll to load more
+                    print(f"[*] Scrolling to load more favorites... (Current: {len(urls)}/{count})")
+                    await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                    await asyncio.sleep(4)
+                
+                if elapsed > timeout_limit:
+                    print("[-] Timeout: Reached limit.")
                     break
 
-                if urls:
-                    # Scroll to load more
-                    print(f"[*] Collected {len(urls)}/{count}. Scrolling down...")
-                    await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                    await asyncio.sleep(3) # Wait for content to load
-                    
-                    # Check if we reached the bottom
-                    new_height = await page.evaluate("document.body.scrollHeight")
-                    # We can store last_height outside to be more precise, but this loop is fine
-                else:
-                    # Just wait and check again
-                    await asyncio.sleep(5)
-
-            print(f"[#] Final count of unique URLs collected: {len(urls)}")
+            print(f"[#] Total collected: {len(urls)}")
             
             # Extract cookies for yt-dlp
             cookies = await context.cookies()
