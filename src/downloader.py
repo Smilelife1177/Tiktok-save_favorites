@@ -79,6 +79,46 @@ class TikTokDownloader:
                         print(f"[-] yt-dlp fallback download also failed for {url}: {e2}")
                     continue
 
+                # If the scraper returned a dict describing a photo/item post, handle directly
+                if isinstance(url, dict) and url.get('type') == 'photo':
+                    page_url = url.get('page_url')
+                    images = url.get('images') or []
+                    uploader = 'unknown'
+                    # Try to infer uploader from the page_url: https://www.tiktok.com/@username/...
+                    try:
+                        parts = page_url.split('/')
+                        for p in parts:
+                            if p.startswith('@'):
+                                uploader = p[1:]
+                                break
+                    except Exception:
+                        pass
+                    out_dir = os.path.join(self.download_path, sanitize_filename(uploader))
+                    os.makedirs(out_dir, exist_ok=True)
+                    if images:
+                        print(f"[*] Downloading {len(images)} images from photo post: {page_url}")
+                        for i, img_url in enumerate(images, start=1):
+                            try:
+                                ext = os.path.splitext(img_url)[1] or '.jpg'
+                                filename = sanitize_filename(f"photo_{i}{ext}")
+                                dest = os.path.join(out_dir, filename)
+                                with requests.get(img_url, stream=True, timeout=30) as r:
+                                    r.raise_for_status()
+                                    with open(dest, 'wb') as f:
+                                        for chunk in r.iter_content(8192):
+                                            f.write(chunk)
+                                print(f"[+] Saved image: {dest}")
+                            except Exception as e:
+                                print(f"[-] Failed to download image {img_url}: {e}")
+                        continue
+                    else:
+                        print(f"[-] No direct images found for {page_url}, falling back to yt-dlp")
+                        try:
+                            ydl.download([page_url])
+                        except Exception as e:
+                            print(f"[-] yt-dlp fallback failed for {page_url}: {e}")
+                        continue
+
                 # Prepare output directory based on uploader
                 uploader = info.get('uploader') or 'unknown'
                 out_dir = os.path.join(self.download_path, sanitize_filename(uploader))

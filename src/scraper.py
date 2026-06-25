@@ -126,12 +126,49 @@ class TikTokScraper:
 
             print(f"[#] Total collected: {len(urls)}")
             
+            # Before closing context, enrich photo/item links by extracting direct image URLs
+            results = []
+            for u in list(urls)[:count]:
+                # If link looks like a photo or item (carousel), open it and gather image srcs
+                if "/photo/" in u or "/item/" in u:
+                    try:
+                        print(f"[*] Opening photo/item page to extract images: {u}")
+                        await page.goto(u)
+                        await asyncio.sleep(1)
+                        img_els = await page.query_selector_all('img')
+                        img_urls = set()
+                        for img in img_els:
+                            src = await img.get_attribute('src')
+                            if not src:
+                                src = await img.get_attribute('data-src')
+                            if not src:
+                                srcset = await img.get_attribute('srcset')
+                                if srcset:
+                                    # pick first URL in srcset
+                                    src = srcset.split(',')[0].strip().split(' ')[0]
+                            if src and not src.startswith('data:'):
+                                clean = src.split('?')[0]
+                                if clean.startswith('//'):
+                                    clean = 'https:' + clean
+                                img_urls.add(clean)
+                        if img_urls:
+                            results.append({'type':'photo', 'page_url': u, 'images': list(img_urls)})
+                            print(f"[+] Extracted {len(img_urls)} images from {u}")
+                        else:
+                            # fallback to returning the page URL for yt-dlp to try
+                            results.append(u)
+                    except Exception as e:
+                        print(f"[-] Failed to extract images from {u}: {e}")
+                        results.append(u)
+                else:
+                    results.append(u)
+
             # Extract cookies for yt-dlp
             cookies = await context.cookies()
             self.save_cookies_netscape(cookies)
 
             await context.close()
-            return list(urls)[:count]
+            return results
 
     def save_cookies_netscape(self, cookies):
         """Saves cookies in Netscape format for yt-dlp."""
