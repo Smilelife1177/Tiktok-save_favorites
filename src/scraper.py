@@ -77,11 +77,20 @@ class TikTokScraper:
                 print("[*] Searching for videos with data-e2e='favorites-item'...")
                 
                 # Primary search for the confirmed favorites items
-                video_elements = await page.query_selector_all('div[data-e2e="favorites-item"] a[href*="/video/"]')
+                # Include video posts and photo/collage posts which may use different URL patterns
+                video_elements = await page.query_selector_all(
+                    'div[data-e2e="favorites-item"] a[href*="/video/"], '
+                    'div[data-e2e="favorites-item"] a[href*="/photo/"], '
+                    'div[data-e2e="favorites-item"] a[href*="/item/"]'
+                )
                 
                 if not video_elements:
                     # Fallback to general favorites container if the items are nested differently
-                    video_elements = await page.query_selector_all('div[data-e2e="favorites-list"] a[href*="/video/"]')
+                    video_elements = await page.query_selector_all(
+                        'div[data-e2e="favorites-list"] a[href*="/video/"], '
+                        'div[data-e2e="favorites-list"] a[href*="/photo/"], '
+                        'div[data-e2e="favorites-list"] a[href*="/item/"]'
+                    )
 
                 if video_elements:
                     for el in video_elements:
