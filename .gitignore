@@ -109,3 +109,8 @@ tiktok_cookies.txt
 GEMINI.md
 extract.sh
 copilot-instructions.md
+favorites_dom.html
+info.json
+test_favorites_dom.py
+test_slideshow_metadata.py
+test_yt_dlp.py

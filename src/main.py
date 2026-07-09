@@ -20,7 +20,9 @@ def main():
     except KeyboardInterrupt:
         print("\n[!] Process interrupted by user.")
     except Exception as e:
-        print(f"\n[!] An unexpected error occurred: {e}")
+        import traceback
+        print("\n[!] An unexpected error occurred:")
+        traceback.print_exc()
 
 if __name__ == "__main__":
     main()
