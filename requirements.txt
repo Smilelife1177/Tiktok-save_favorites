@@ -3,3 +3,4 @@ playwright
 python-dotenv
 asyncio
 requests
+curl-cffi

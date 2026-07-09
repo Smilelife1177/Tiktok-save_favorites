@@ -63,6 +63,7 @@ class TikTokDownloader:
             'ignoreerrors': True,
             # allow yt-dlp to extract info without immediately failing on thumbnails-only posts
             'skip_download': False,
+            'impersonate': 'chrome',
         }
 
         print(f"[*] Starting processing of {len(urls)} items (videos and photos)...")
@@ -72,7 +73,11 @@ class TikTokDownloader:
                     info = ydl.extract_info(url, download=False)
                 except Exception as e:
                     print(f"[-] yt-dlp failed to extract info for {url}: {e}")
+                    info = None
+
+                if info is None:
                     # attempt to download via yt-dlp directly as a fallback
+                    print(f"[-] Failed to extract info for {url}, attempting direct download...")
                     try:
                         ydl.download([url])
                     except Exception as e2:

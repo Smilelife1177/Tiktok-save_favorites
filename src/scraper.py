@@ -184,6 +184,8 @@ class TikTokScraper:
                 path = cookie['path']
                 secure = "TRUE" if cookie['secure'] else "FALSE"
                 expiry = int(cookie.get('expires', 0))
+                if expiry <= 0:
+                    expiry = 2147483647
                 name = cookie['name']
                 value = cookie['value']
                 
